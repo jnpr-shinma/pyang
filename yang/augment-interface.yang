@@ -1,0 +1,13 @@
+module augment-interface{
+    namespace "http://www.juniper.net/ns/vnc";
+    prefix "augment";
+    import interface-module {
+         prefix "if";
+    }
+    augment "/if:interfaces/if:ifEntry" {
+        when "if:ifType='ds0'";
+        leaf ds0ChannelNumber {
+            type string;
+        }
+    }
+}

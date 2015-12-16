@@ -1,0 +1,221 @@
+submodule test {
+
+    belongs-to "juniper" {
+        prefix "juniper";
+    }
+    import csp-common { prefix "csp"; }
+    import ietf-yang-types {
+        prefix yang;
+    }
+    organization "juniper";
+    revision "2015-01-01" {
+        description "Initial revision. ";
+    }
+        list account {
+        uses csp:entity;
+        csp:vertex;
+
+        key name;
+
+        leaf balance {
+            type uint32;
+        }
+        leaf first-name {
+            type string;
+        }
+        leaf last-name {
+            type string;
+        }
+        leaf age {
+            type uint32;
+        }
+        leaf gender {
+            type enumeration {
+                enum M;
+                enum F;
+            }
+        }
+        leaf address {
+            type string;
+        }
+        leaf employer {
+            type string;
+        }
+        leaf email {
+            type string;
+        }
+        leaf city {
+            type string;
+        }
+        leaf state {
+            type string;
+        }
+
+        list phone {
+            csp:has-edge;
+            key uuid;
+
+            leaf uuid {
+                type leafref {
+                    path "../../../phone/uuid";
+                }
+            }
+        }
+
+        list user {
+            csp:ref-edge;
+            key uuid;
+
+            leaf uuid {
+                type leafref {
+                    path "../../../user/uuid";
+                }
+            }
+        }
+
+        container credit {
+            uses csp:entityNoname;
+            uses credit-info;
+        }
+    }
+
+    list phone {
+            uses csp:entityNoname;
+            csp:vertex;
+           // ordered-by phone-number;
+            key uuid;
+            leaf phone-number {type string;}
+            leaf phone-type {type string;}
+            leaf first-name {type string;}
+
+    }
+
+    grouping credit-info {
+
+        leaf credit_name {type string;}
+        leaf credit_score {type uint32;}
+        leaf current_credit_cards {type uint32;}
+        anyxml data {
+            description "test";
+        }
+    }
+
+    list user {
+         description "This is a list of users in the system.";
+         uses csp:entity;
+
+         ordered-by user;
+         config true;
+
+         key "name";
+
+         leaf user-type {
+             type string;
+         }
+         leaf full-name {
+             type string;
+         }
+     }
+
+    rpc transfer {
+        description "Synchronize service instance with JSM";
+        input {
+
+            leaf accountid {
+               type yang:uuid;
+            }
+
+            leaf amount {
+               type uint32;
+            }
+            container schedule {
+                leaf date {type string;}
+                leaf bydate {type string;}
+                leaf recurring {type boolean;}
+            }
+        }
+        output {
+            leaf status {
+                type enumeration {
+                    enum success;
+                    //transfer is successfull
+                    enum incomplete_funds;
+                    //not enough funds for transfer
+                    enum overdraft;
+                    //overdraft
+                }
+
+            }
+        }
+    }
+
+    rpc transfer-to-group {
+        description "Synchronize service instance with JSM";
+        input {
+
+            leaf accountid {
+               type yang:uuid;
+            }
+
+            leaf amount {
+               type uint32;
+            }
+            list receivers {
+              key receiverid;
+              leaf receiverid {
+                 type yang:uuid;
+              }
+              leaf name {
+                type string;
+              }
+            }
+            container schedule {
+                leaf date {type string;}
+                leaf bydate {type string;}
+                leaf recurring {type boolean;}
+            }
+        }
+        output {
+            list status {
+                leaf receiverid {type yang:uuid;}
+                leaf transfer_status {
+                    type enumeration {
+                        enum success;
+                        //transfer is successfull
+                        enum incomplete_funds;
+                        //not enough funds for transfer
+                        enum overdraft;
+                        //overdraft
+                        }
+
+                }
+            }
+        }
+    }
+
+    rpc deposit {
+        description "deposit credit to account";
+        input {
+            leaf accountid {
+               type yang:uuid;
+            }
+            leaf amount {
+               type uint32;
+            }
+        }
+
+        output {
+            leaf status {
+               type string;
+            }
+            leaf transactionid {
+                type yang:uuid;
+            }
+            leaf current_balance {
+                type uint32;
+            }
+        }
+
+    }
+
+}

@@ -1,0 +1,181 @@
+module csp-common {
+
+    namespace "urn:ietf:params:xml:ns:yang:csp";
+    prefix "csp";
+
+    import ietf-yang-types {
+        prefix yang;
+    }
+    import ietf-inet-types {
+        prefix inet;                // RFC 6991
+    }
+    organization
+    	"Juniper Networks";
+
+    contact
+    	"nfvos-dev@juniper.net";
+
+    description
+    	"CSP common YANG types or base groupings";
+
+    revision 2015-04-24 {
+        description
+         "Initial revision";
+    }
+
+    typedef tenant-enum-type{
+        type enumeration {
+            enum default;
+            enum small;
+            enum medium;
+            enum large;
+            enum xlarge;
+        }
+        default 'default';
+        description "A list of different type of tenant. ";
+    }
+    grouping entity {
+    	uses entityNoname;
+    	leaf name {
+    		description "the name of the IFMAP identity";
+    		type string;
+    	}
+    }
+
+    grouping entityNoname {
+        description "Base grouping for all objects that can be identified, access-coontroled, multi-tenantable";
+        leaf administrative-domain { type string; }
+        leaf type {
+            type enumeration {
+                enum aik_name;
+                enum distinguished_name;
+                enum dns_name;
+                enum email_address;
+                enum hip_hit;
+                enum kerberos_principal;
+                enum username;
+                enum sip_uri;
+                enum tel_uri;
+                enum other;
+            }
+        }
+        leaf other_definition { type string; }
+
+        // Extensions
+        leaf-list fq_name {
+            description "FQDN for the IFMAP identity";
+            type string;
+        }
+        leaf uuid {
+            description "UUID for the IFMAP identity";
+            type yang:uuid;
+        }
+        leaf href {
+            description "HATEOAS HREF for the identity node";
+            type inet:uri;
+        }
+        leaf parent_uuid {
+            description "parent node UUID";
+            type yang:uuid;
+        }
+        leaf parent_href {
+            description "parent node HATEOAS HREF";
+            type inet:uri;
+        }
+        leaf parent_type {
+            description "parent node type";
+            type string;
+        }
+        leaf display_name {
+            description "Display name";
+            type string;
+        }
+        container id_perms {
+            description "identity RBAC permission";
+            uses EntityPermission;
+        }
+    }
+
+    grouping EntityPermission {
+        description "Identity node permission";
+
+        container permissions { uses Permission; }
+        container uuid { uses Uuid; }
+        leaf enable { type boolean; }
+        leaf created { type yang:date-and-time; }
+        leaf last_modified { type yang:date-and-time; }
+        leaf description { type string; }
+        leaf user_visible { type boolean; }
+    }
+
+    typedef Access {
+        description "Unix alike access notation: rwx";
+        type uint8 { range "0 .. 7"; }
+    }
+
+    grouping Permission {
+        description "Unix alike permission";
+        leaf owner { type string; }
+        leaf owner_access { type Access; }
+        leaf group { type string; }
+        leaf group_access { type Access; }
+        leaf other_access { type Access; }
+    }
+
+    grouping Uuid {
+        description "UUID generated according to RFC-4122";
+        leaf uuid_mslong { type uint64; }
+        leaf uuid_lslong { type uint64; }
+    }
+
+    extension vertex  {
+	    description "A vertex maintains pointers to both a set of incoming and outgoing edges.
+                    The outgoing edges are those edges for which the vertex is the tail.
+                    The incoming edges are those edges for which the vertex is the head.";
+    }
+
+    extension has-edge  {
+        description "An Edge links two vertices. Along with its key/value properties, an edge has both a directionality and a label.
+                    The directionality determines which vertex is the tail vertex (out vertex) and which vertex is the head vertex (in vertex).
+                    The edge label determines the type of relationship that exists between the two vertices.";
+    }
+    extension ref-edge  {
+        description "An Edge links two vertices. Along with its key/value properties, an edge has both a directionality and a label.
+                    The directionality determines which vertex is the tail vertex (out vertex) and which vertex is the head vertex (in vertex).
+                    The edge label determines the type of relationship that exists between the two vertices.";
+    }
+    extension define  {
+		argument target;
+        description "The define statement take an argument, which is a string standing for the pre-defined value.";
+    }
+
+    extension sample-data {
+        description
+           "Takes as argument a name string.
+           Can be used for documentation or MOC object generation.";
+        argument "name";
+    }
+
+    grouping notification-base {
+        description "Common notification fields";
+        leaf timestamp {
+            type yang:date-and-time;
+        }
+        leaf sequence-number {
+            type uint32;
+        }
+    }
+
+    grouping notification-info {
+        description "notification info for naas user applications.";
+        leaf groupid {
+            type yang:uuid;
+        }
+        leaf group-name {
+            type string;
+        }
+        leaf selfid {
+            type yang:uuid;
+        }
+    }
+}

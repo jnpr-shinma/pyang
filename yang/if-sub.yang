@@ -1,0 +1,28 @@
+submodule if-sub {
+    belongs-to "juniper" {
+        prefix "juniper";
+    }
+    organization "juniper";
+    revision "2015-01-01" {
+        description "Initial revision. ";
+    }
+    // definitions follow. . .
+    container interfaces {
+         list ifEntry {
+             key "ifIndex";
+
+             leaf ifIndex {
+                 type uint32;
+             }
+             leaf ifDescr {
+                 type string;
+             }
+             leaf ifType {
+                 type string;
+             }
+             leaf ifMtu {
+                 type int32;
+             }
+         }
+     }
+}

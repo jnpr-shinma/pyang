@@ -1,0 +1,20 @@
+submodule if-aug-sub {
+    belongs-to "juniper" {
+        prefix "juniper";
+    }
+    //include device;
+    //include image;
+    include if-sub;
+    organization "juniper";
+    revision "2015-01-01" {
+        description "Initial revision. ";
+    }
+    // definitions follow. . .
+
+    augment "/juniper:interfaces/juniper:ifEntry" {
+        when "juniper:ifType='ds0'";
+        leaf ds0ChannelNumber {
+            type string;
+        }
+    }
+}

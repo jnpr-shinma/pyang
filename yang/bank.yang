@@ -1,0 +1,102 @@
+﻿submodule bank {
+    belongs-to "juniper" {
+        prefix "juniper";
+    }
+    yang-version 1;
+    import csp-common { prefix "csp"; }
+    import ietf-yang-types {
+        prefix yang;                // RFC 6021
+    }
+
+    list account{
+        uses csp:entity;
+        key uuid;
+        csp:vertex;
+        leaf balance {
+            type uint32;
+        }
+        leaf first-name {
+            type string;
+        }
+        leaf last-name {
+            type string;
+        }
+        leaf age {
+            type uint32;
+        }
+        leaf gender {
+            type enumeration {
+                enum M;
+                enum F;
+            }
+        }
+        leaf address {
+            type string;
+        }
+        leaf employer {
+            type string;
+        }
+        leaf email {
+            type string;
+        }
+        leaf city {
+            type string;
+        }
+        leaf state {
+            type string;
+        }
+    }
+
+    rpc active-account {
+        input {
+            leaf uuid {
+                type leafref { path "/account/uuid"; }
+            }
+        }
+
+        output {
+            leaf status {
+                description "";
+                type enumeration {
+                    enum PUBLISHED;
+                    enum FAILED;
+                }
+            }
+
+            leaf message {
+                description "";
+                type string;
+            }
+        }
+    }
+
+    notification account-created {
+        leaf job-id {
+            type yang:uuid;
+        }
+        leaf instance-id {
+            type yang:uuid;
+        }
+    }
+
+    notification account-activated {
+        leaf job-id {
+            type yang:uuid;
+        }
+
+        leaf instance-id {
+            type yang:uuid;
+        }
+
+        leaf result {
+            type enumeration {
+                enum succeeded;
+                enum failed;
+            }
+        }
+
+        leaf message {
+            type string;
+        }
+    }
+}

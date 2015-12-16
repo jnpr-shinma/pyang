@@ -1,0 +1,24 @@
+module interface-module {
+    yang-version 1;
+    import ietf-yang-types {
+        prefix yang;                // RFC 6021
+    }
+    container interfaces {
+         list ifEntry {
+             key "ifIndex";
+
+             leaf ifIndex {
+                 type uint32;
+             }
+             leaf ifDescr {
+                 type string;
+             }
+             leaf ifType {
+                 type iana:IfType;
+             }
+             leaf ifMtu {
+                 type int32;
+             }
+         }
+     }
+}

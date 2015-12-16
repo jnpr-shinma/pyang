@@ -1,0 +1,20 @@
+module juniper {
+    namespace "http://www.juniper.net/ns/vnc";
+    prefix "juniper";
+
+
+    include if-aug-sub;
+    include if-sub;
+    //include device;
+    //include image;
+    //include bank;
+    //include test;
+
+
+
+    organization "juniper";
+    revision "2015-01-01" {
+        description "Initial revision. ";
+    }
+    // definitions follow. . .
+}

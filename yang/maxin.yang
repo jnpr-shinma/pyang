@@ -1,0 +1,24 @@
+﻿module ddd
+{
+    yang-version 1;
+    namespace "http://www.juniper.net/ns/bank";
+    prefix "maxin";
+    organization "Juniper Networks";
+    description "maxin";
+    revision 2015-05-25 {
+        description "Initial version";
+    }
+
+    list maxin{
+        key balance;
+        leaf balance {
+            type uint32;
+        }
+        leaf first-name {
+            type string;
+        }
+        leaf last-name {
+            type string;
+        }
+    }
+}

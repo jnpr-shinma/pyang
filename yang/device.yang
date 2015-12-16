@@ -1,0 +1,60 @@
+submodule device {
+    belongs-to "juniper" {
+        prefix "juniper";
+    }
+    organization "juniper";
+    revision "2015-01-01" {
+        description "Initial revision. ";
+    }
+    // definitions follow. . .
+    container redundancy {
+      description "Redundancy info";
+
+      leaf masterRE { type string; description "Master RE name"; }
+      leaf status { type string; description "Redundancy Status"; }
+
+      list peer {
+        description "Redundancy Peers";
+        key id;
+
+        leaf id { type uint32; description "Peer device Id"; }
+        leaf name { type string; description "Peer device name"; }
+      } // list peers
+    } // container redundancy
+    list tp{
+        key owner;
+        uses Permission;
+        choice auth-methods {
+						case basic {
+
+							leaf username {
+								type string;
+								description "";
+								mandatory true;
+							}
+							leaf password {
+								type string;
+								mandatory true;
+								description "";
+							}
+
+
+						}
+						case hmac {
+							leaf secret {
+								type string;
+								description "A secret will be used to generate hmac signature.";
+							}
+						}
+
+					}
+    }
+    grouping Permission {
+        description "Unix alike permission";
+        leaf owner { type string; }
+        leaf owner-access { type string; }
+        leaf group { type string; }
+        leaf group-access { type string; }
+        leaf other-access { type string; }
+    }
+}

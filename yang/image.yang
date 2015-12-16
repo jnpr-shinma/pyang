@@ -1,0 +1,10 @@
+submodule image {
+    belongs-to "juniper" {
+        prefix "juniper";
+    }
+    organization "juniper";
+    revision "2015-01-01" {
+        description "Initial revision. ";
+    }
+    // definitions follow. . .
+}
