@@ -25,4 +25,10 @@ submodule if-sub {
              }
          }
      }
+    list network-function{
+        key uuid;
+        leaf uuid{
+            type string;
+        }
+    }
 }

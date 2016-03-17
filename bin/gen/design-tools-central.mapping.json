@@ -1,0 +1,1 @@
+{"design-tools-central": {"mappings": {"user": {"properties": {"name": {"index": "analyzed", "type": "string", "fields": {"_user_suggest": {"type": "completion"}, "_raw": {"index": "not_analyzed", "type": "string"}}}}}}}}

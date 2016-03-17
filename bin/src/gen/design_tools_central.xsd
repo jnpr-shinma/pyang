@@ -1,0 +1,8 @@
+<!--
+ Copyright (c) 2013 Juniper Networks, Inc. All rights reserved.
+ -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:ifmap="http://www.trustedcomputinggroup.org/2010/IFMAP/2"
+	xmlns:meta="http://www.trustedcomputinggroup.org/2010/IFMAP-METADATA/2">
+
+</xsd:schema>

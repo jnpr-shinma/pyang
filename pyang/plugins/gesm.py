@@ -48,9 +48,16 @@ def mapping(ctx, modules):
             mapping={}
             module_node=mapping[module.arg]={}
             mappings_node=module_node['mappings']={}
-            for child in module.i_children:
-                if child.keyword in ('list','container'):
-                    map_node(child,module,mappings_node,child.arg)
+            for vertex in module.i_children:
+                if vertex.keyword in ('list','container'):
+                    document_type_name = vertex.arg.replace('-', '_')
+                    if hasattr(vertex, 'i_children'):
+                        children = vertex.i_children
+                        node=mappings_node[document_type_name]={}
+                        node_prop=node['properties']={}
+                        for child in children:
+                            map_node(child, module,node_prop,document_type_name)
+                    # map_node(child,module,mappings_node,child.arg)
             file='%s%s%s.mapping.json'%(ctx.opts.directory,os.sep,module.arg)
             try:
                 os.makedirs(ctx.opts.directory, 0o777)
@@ -147,8 +154,3 @@ def get_es_type(yang_type):
     elif yang_type == 'binary':
         es_type = 'binary'
     return es_type
-
-
-
-
-

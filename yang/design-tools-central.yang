@@ -1,0 +1,13 @@
+module design-tools-central {
+    yang-version 1;
+    namespace "http://www.juniper.net/ns/validation";
+    prefix validation;
+
+    list user {
+         description "This is a list of users in the system.";
+         key name;
+         leaf name {
+            type string;
+         }
+    }
+}
