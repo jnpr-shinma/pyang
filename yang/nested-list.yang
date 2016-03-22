@@ -1,0 +1,19 @@
+module nested-list {
+    namespace "http://www.juniper.net/ns/vnc";
+    prefix "juniper";
+    organization "juniper";
+    revision "2015-01-01" {
+        description "Initial revision. ";
+    }
+    // definitions follow. . .
+    list car{
+        key uuid;
+        leaf uuid{type string;}
+
+        list person{
+            key name;
+            leaf name{type string;}
+            leaf age{type string;}
+        }
+    }
+}

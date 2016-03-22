@@ -1,51 +1,410 @@
 module design-tools-central {
-    yang-version 1;
-    namespace "http://www.juniper.net/ns/validation";
-    prefix validation;
 
-    typedef gender {
-        type enumeration {
-            enum M;
-            enum F;
+    namespace "urn:ietf:params:xml:ns:yang:dt";
+    prefix "nfv-dt";
+
+    import ietf-yang-types {
+        prefix yang;
+    }
+
+    import csp-common {
+        prefix "csp";
+    }
+
+    organization
+        "Juniper Networks";
+
+    contact
+        "nfvos-dev@juniper.net";
+
+    description
+        "Data model for all Network Function Virtualization Design Tools";
+
+    revision 2015-04-24 {
+        description "Initial revision";
+    }
+
+    list network-function {
+        uses csp:entityNoname;
+        csp:vertex;
+        description "List of network functions supported by various VNF vendors";
+        key uuid;
+
+        leaf name {
+            description "Network function name";
+            type string;
+        }
+
+        leaf category {
+            type enumeration {
+                enum Security;
+                enum Networking;
+                enum Switching;
+                enum Routing;
+            }
+        }
+
+        leaf vendor {
+            type string;
         }
     }
-    typedef ranged-int32 {
-        type int32 {
-        range "1..4 | 10..20";
+
+    list resource-service-request {
+        csp:vertex;
+        description "Resource service request";
+        uses csp:entity;
+        key uuid;
+
+        leaf description {
+            description "Description of the Resource Service Request";
+            type string;
         }
-    }
-    typedef string-restrictions {
-        type string {
-            length "2..5 | 8 | 10..max";
-            pattern "[0-9a-fA-F]*";
+
+        leaf status {
+            type enumeration {
+                enum Started;
+                enum In-Progress;
+                enum Published;
+                enum Rejected;
+                enum Designed;
+            }
         }
-    }
-    list user {
-         description "This is a list of users in the system.";
-         ordered-by user;
-         key name;
-         leaf name {
-            type string-restrictions;
-         }
-         leaf count {
-            type ranged-int32;
-         }
-         leaf gender {
-            type gender;
-         }
-         leaf-list awards {
-             type string;
-             min-elements 2;
-             max-elements 3;
-         }
-         list address{
-            key name;
-            leaf name{
+
+	leaf priority {
+            description "Priority of the Resource service design request";
+            type enumeration {
+                enum high;
+                enum medium;
+                enum low;
+            }
+        }
+
+	leaf customer {
+            description "Customer that this Resource service design is created for";
+            type string;
+        }
+
+	list vnfd {
+            description "VNF descriptor that this Resource service design is created for";
+            key uuid;
+            leaf uuid {
                 type string;
             }
-            leaf detail{
-                type string-restrictions;
+            leaf filename{
+                type string;
             }
-         }
-     }
+        }
+
+	leaf timestamp {
+            description "last update timestamp";
+            type yang:date-and-time;
+        }
+    }
+
+    list functional-service-request {
+        csp:vertex;
+        description "Functional service request";
+        uses csp:entity;
+        key uuid;
+
+        leaf description {
+            description "Description of the Functional Service Request";
+            type string;
+        }
+
+        leaf status {
+            type enumeration {
+                enum Started;
+                enum In-Progress;
+                enum Published;
+                enum Rejected;
+                enum Designed;
+            }
+        }
+
+	leaf priority {
+            description "Priority of the functional service design request";
+            type enumeration {
+                enum high;
+                enum medium;
+                enum low;
+            }
+        }
+
+        leaf need_design {
+            description "Configure if it needs network service design";
+            type boolean;
+        }
+
+	    leaf customer {
+            description "Customer that this functional service design is created for";
+            type string;
+        }
+
+	    list requirements {
+            description "Requirements that this functional service design is created for";
+            key uuid;
+            leaf uuid {
+                type string;
+            }
+            leaf filename{
+                type string;
+            }
+        }
+
+        leaf tag {
+            description "Tag for the Functional Service Design";
+            type string;
+        }
+
+	    leaf timestamp {
+            description "last update timestamp";
+            type yang:date-and-time;
+        }
+    }
+
+    list functional-service-design {
+        csp:vertex;
+        description "Functional service design catalog";
+        uses csp:entityNoname;
+        key uuid; // defined in csp:entity
+    }
+
+    list config-template {
+        csp:vertex;
+        description "Config template to configure a specific network function, such as NAT, Firewall or IDP";
+        uses csp:entityNoname;
+        key uuid; // defined in csp:entity
+
+        list constraints {
+            description
+                "List of constraints on where this configuration can be applied to. For example, you
+                 can add a constraint here to specify that this template can only be applied to
+                 Juniper vSRX 'NAT-FW' function chain. If there is no constraint specified, it means
+                 that this config template can be applied anywhere.";
+            key constraint-name;
+
+            leaf constraint-name {
+                description "Unique constraint name";
+                type string;
+            }
+
+            leaf vendor-name {
+                description
+                    "If vendor name is specified, it means that this template can only be applied to
+                     this specific vendor's VNFs/PNFs/devices";
+                type string;
+            }
+
+            leaf platform-name {
+                description
+                    "If platform name is specified, it means that this template can only be applied to
+                     this specific platform. Platform could be VNF such as vSRX, or PNF/device such as
+                     SRX.";
+                type string;
+            }
+
+            container function-chain {
+                description
+                    "If function chain is specified, it means that this template can only be applied to
+                     this specific function chain.";
+                leaf-list function-name {
+                    type string;
+                }
+            }
+        }
+    }
+
+    list operation-command {
+        csp:vertex;
+        description "Operation command definition";
+        uses csp:entityNoname;
+        key uuid; // defined in csp:entity
+    }
+
+    list show-command {
+        csp:vertex;
+        description "Show command definition";
+        uses csp:entityNoname;
+        key uuid; // defined in csp:entity
+    }
+
+    list nsd-ui-layout {
+        csp:vertex;
+        uses csp:entityNoname;
+        key uuid;
+        leaf name { type string; }
+
+        leaf graph-content {
+            description "GUI layout data for the topology of network service design";
+            type string;
+        }
+    }
+
+    list fsd-ui-layout {
+        csp:vertex;
+        uses csp:entityNoname;
+        key uuid;
+        leaf name { type string; }
+
+        leaf graph-content {
+            description "GUI layout data for the topology of functional service design";
+            type string;
+        }
+    }
+
+    list vnf-package {
+        csp:vertex;
+        description
+            "VNF resource extended from vnf-resource-base with refernce to
+             vnf-descriptor and base config";
+        uses csp:entityNoname;
+        key uuid; // defined in csp:entity
+
+        leaf priority {
+            description "Priority of the vnf package";
+            type enumeration {
+                enum high;
+                enum medium;
+                enum low;
+            }
+        }
+
+        leaf status {
+            description "Status of the vnf package";
+            type enumeration {
+                enum Started;
+                enum In-Progress;
+                enum Validated;
+                enum Published;
+            }
+        }
+
+        leaf timestamp {
+            description "last update timestamp";
+            type yang:date-and-time;
+        }
+
+        leaf-list resource-service-request {
+            csp:ref-edge;
+            description "";
+            type leafref { path "../../resource-service-request/uuid"; }
+        }
+    }
+
+    list vld {
+        csp:vertex;
+        description
+            "";
+        uses csp:entityNoname;
+        key uuid;
+    }
+
+    list nsd-package {
+        csp:vertex;
+        description "Network service design package";
+        uses csp:entityNoname;
+        key uuid;
+
+        leaf-list functional-service-design {
+            csp:ref-edge;
+            description "Functional service design Id";
+            type leafref { path "../../functional-service-design/uuid"; }
+        }
+
+        leaf priority {
+            description "Priority of the Network service design package";
+            type enumeration {
+                enum high;
+                enum medium;
+                enum low;
+            }
+        }
+
+        leaf timestamp {
+            description "last update timestamp";
+            type yang:date-and-time;
+        }
+
+        leaf status {
+            description "Status of the network service design";
+            type enumeration {
+                enum Started;
+                enum In-Progress;
+                enum Completed;
+                enum Validated;
+                enum Published;
+            }
+        }
+    }
+
+    rpc publish-nsd-package {
+        input {
+            leaf uuid {
+                description "NSD Package UUID";
+                type yang:uuid;
+            }
+        }
+
+        output {
+            leaf status {
+                description "";
+                type enumeration {
+                    enum PUBLISHED;
+                    enum FAILED;
+                }
+            }
+
+            leaf message {
+                description "";
+                type string;
+            }
+        }
+    }
+
+    rpc re-import-data {
+        output {
+            leaf status {
+                description "";
+                type enumeration {
+                    enum IMPORTED;
+                    enum FAILED;
+                }
+            }
+
+            leaf message {
+                description "";
+                type string;
+            }
+        }
+    }
+
+
+    rpc duplicate-functional-service-design{
+        input {
+            leaf uuid {
+                description "Functional Service Design UUID";
+                type yang:uuid;
+            }
+        }
+
+        output {
+            leaf uuid {
+                type yang:uuid;
+            }
+
+            leaf status {
+                description "";
+                type enumeration {
+                    enum DUPLICATED;
+                    enum FAILED;
+                }
+            }
+
+            leaf message {
+                description "";
+                type string;
+            }
+        }
+    }
 }

@@ -47,6 +47,7 @@ def mapping(ctx, modules):
         if module.keyword == 'module':
             mapping={}
             module_node=mapping[module.arg]={}
+            module_node['settings']={"index":{"analysis":{"analyzer":{"default":{"type":"simple"}}}}}
             mappings_node=module_node['mappings']={}
             for child in module.i_children:
                 if child.keyword=='list':
@@ -89,11 +90,13 @@ def map_node(s, module,parent_node,document_type_name):
                 map_node(child, module,parent_node,document_type_name)
     elif hasattr(s, 'i_children'):
             children = s.i_children
-            node=parent_node[_node_name]={}
+            if s.keyword in ('list') and _node_name != document_type_name:
+                node=parent_node[_node_name]={'type':'nested'}
+            else:
+                node=parent_node[_node_name]={}
             node_prop=node['properties']={}
             for child in children:
                 map_node(child, module,node_prop,document_type_name)
-
 
 def get_build_in_type(stmt):
     """Returns the built in type that stmt is derived from"""

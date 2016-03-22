@@ -1,0 +1,44 @@
+module choice {
+    namespace "http://www.juniper.net/ns/vnc";
+    prefix "juniper";
+    organization "juniper";
+    revision "2015-01-01" {
+        description "Initial revision. ";
+    }
+    // definitions follow. . .
+    list car{
+        key uuid;
+        leaf uuid{type string;}
+
+        anyxml links {
+            config false;
+            description "Object description";
+        }
+
+        choice template {
+            description "Template data in XML or plain text";
+            case config-in-xml {
+                description "Device config in XML that conforms to YANG schema";
+                leaf config-in-xml {
+                    type string;
+                }
+            }
+            case config-in-text {
+                leaf config-in-text {
+                    description "Device config in plain text that could be vendor specific CLI or stanza";
+                    type string;
+                }
+            }
+        }
+        container person{
+            leaf name{type string;}
+        }
+    }
+    container house{
+        leaf address{type string;}
+        list add{
+            key name;
+            leaf name{type string;}
+        }
+    }
+}

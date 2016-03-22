@@ -1,4 +1,4 @@
-module mx {
+module choice {
     namespace "http://www.juniper.net/ns/vnc";
     prefix "juniper";
     organization "juniper";
@@ -9,12 +9,6 @@ module mx {
     list car{
         key uuid;
         leaf uuid{type string;}
-
-        anyxml links {
-            config false;
-            description "Object description";
-        }
-
         choice template {
             description "Template data in XML or plain text";
             case config-in-xml {
@@ -29,16 +23,6 @@ module mx {
                     type string;
                 }
             }
-        }
-        container person{
-            leaf name{type string;}
-        }
-    }
-    container house{
-        leaf address{type string;}
-        list add{
-            key name;
-            leaf name{type string;}
         }
     }
 }

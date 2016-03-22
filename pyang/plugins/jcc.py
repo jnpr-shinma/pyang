@@ -40,6 +40,7 @@ import re
 
 from datetime import date
 from pyang import plugin, util, error
+from xml.sax.saxutils import escape
 
 OSSep = "/"
 
@@ -1134,85 +1135,78 @@ class ClassGenerator(object):
         indent = '\t' * 2
         body_indent = '\t' * 3
         complex_type = parent_arg + 'Type'
-        type_body.append(file_indent + '<xsd:complexType name="' + complex_type + '">')
+
+        desc = search_one(stmt, "description")
+        if desc:
+            comment = "comment=\""+escape(desc.arg)+"\""
+        else:
+            comment = ""
+
+        type_body.append(file_indent + '<xsd:complexType name="' + complex_type + '" '+comment+'>')
         type_body.append(indent + '<xsd:all>')
 
         #generate choice type
         for choice in search(stmt, "choice"):
+            desc = search_one(choice, "description")
+            if desc:
+                comment = "comment=\""+escape(desc.arg)+"\""
+            else:
+                comment = ""
             if hasattr(choice, 'i_uses'):
                 # grouping contain choice, use grouping to avoid duplicate code
                 choice_type = normalize(choice.i_uses[0].arg.replace(':','_') + choice.arg)
                 if choice_type not in self.ucg:
                     self.ucg.add(choice_type)
                     self.generate_choicetype(choice_type, choice)
-                type_body.append(body_indent + '<xsd:element name="' + choice.arg + '" type="' + choice_type + 'Type" />')
+                type_body.append(body_indent + '<xsd:element name="' + choice.arg + '" type="' + choice_type + 'Type" '+comment+'/>')
             else:
                 choice_type = normalize(stmt.arg+choice.arg)
                 self.generate_choicetype(choice_type, choice)
-                type_body.append(body_indent + '<xsd:element name="' + choice.arg + '" type="' + choice_type + 'Type" />')
+                type_body.append(body_indent + '<xsd:element name="' + choice.arg + '" type="' + choice_type + 'Type" '+comment+'/>')
 
         for property in search(stmt, list(yangelement_stmts|{'anyxml'})):
+            desc = search_one(property, "description")
+            if desc:
+                comment = "comment=\""+escape(desc.arg)+"\""
+            else:
+                comment = ""
             if property.arg in ignore_list:
                 continue
             if property.parent.arg != stmt.arg:
                 continue
             if property.keyword == "leaf":
-                type = search_one(property, 'type')
-                type_arg = self.get_build_in_type(property).arg
-                if type_arg in yang_to_xsd_types:
-                    leaf_type_name = yang_to_xsd_types[type_arg]
-                elif type.arg == "enumeration":
-                    # generate enumeration type
-                    self.generate_enumtype(property.arg, type)
-                    leaf_type_name = normalize(property.arg)+'Type'
-                elif type_arg in ("union", "type"):
-                    leaf_type_name = type.arg
-                else:
-                    leaf_type_name = normalize(type.arg)+"Type"
+                leaf_type_name = self.get_stmt_type_name(property, property.arg)
+                type_body.append(body_indent + '<xsd:element name="' + property.arg + '" type="' + leaf_type_name + '" '+comment+'/>')
 
-                type_body.append(body_indent + '<xsd:element name="' + property.arg + '" type="' + leaf_type_name + '"/>')
-
-            if property.keyword in ["list","container"]:
+            if property.keyword in ["list", "container"]:
                 if hasattr(property, 'i_uses'):
                     # grouping contain list, use grouping to avoid duplicate code
                     group_stmt = property.i_uses[0].i_grouping
                     if len(group_stmt.i_children) == 1 and group_stmt.i_children[0].keyword == "list":
                         leaf_type_name = normalize(group_stmt.arg)+ "Type"
                         if property.keyword == 'list':
-                            type_body.append(body_indent + '<xsd:element name="' + property.arg + '" type="' + leaf_type_name + '" maxOccurs="unbounded"/>')
+                            type_body.append(body_indent + '<xsd:element name="' + property.arg + '" type="' + leaf_type_name + '" maxOccurs="unbounded" '+comment+'/>')
                         else:
-                            type_body.append(body_indent + '<xsd:element name="' + property.arg + '" type="' + leaf_type_name + '"/>')
+                            type_body.append(body_indent + '<xsd:element name="' + property.arg + '" type="' + leaf_type_name + '" '+comment+'/>')
                         continue
                 property_arg = property.arg
                 if stmt.keyword in ["input", "output"]:
-                    typename = normalize(parent_arg+"-"+property_arg)
+                    type_name = normalize(parent_arg+"-"+property_arg)
                 else:
-                    typename = normalize(stmt.arg+"-"+property_arg)
-                self.generate_type(typename, property)
-                list_type_name = typename + "Type"
+                    type_name = normalize(stmt.arg+"-"+property_arg)
+                self.generate_type(type_name, property)
+                list_type_name = type_name + "Type"
                 if property.keyword == 'list':
-                    type_body.append(body_indent + '<xsd:element name="' + property.arg + '" type="' + list_type_name + '" maxOccurs="unbounded"/>')
+                    type_body.append(body_indent + '<xsd:element name="' + property.arg + '" type="' + list_type_name + '" maxOccurs="unbounded" '+comment+'/>')
                 else:
-                    type_body.append(body_indent + '<xsd:element name="' + property.arg + '" type="' + list_type_name + '"/>')
+                    type_body.append(body_indent + '<xsd:element name="' + property.arg + '" type="' + list_type_name + '" '+comment+' />')
 
             if property.keyword == "leaf-list":
-                type = search_one(property, 'type')
-                type_arg = self.get_build_in_type(property).arg
-                if type_arg in yang_to_xsd_types:
-                    type_name = yang_to_xsd_types[type_arg]
-                elif type.arg == "enumeration":
-                    # generate enumeration type
-                    self.generate_enumtype(property.arg, type)
-                    type_name = normalize(property.arg)+'Type'
-                elif type_arg in ("union", "type"):
-                    type_name = type.arg
-                else:
-                    type_name = normalize(type.arg)+"Type"
-
-                type_body.append(body_indent+'<xsd:element name="'+property.arg+'" type="'+type_name+'" maxOccurs="unbounded" />')
+                type_name = self.get_stmt_type_name(property, property.arg)
+                type_body.append(body_indent+'<xsd:element name="'+property.arg+'" type="'+type_name+'" maxOccurs="unbounded" '+comment+'/>')
 
             if property.keyword == "anyxml":
-                type_body.append(body_indent+'<xsd:element name="'+property.arg+'" type="xsd:string" />')
+                type_body.append(body_indent+'<xsd:element name="'+property.arg+'" type="xsd:string" '+comment+'/>')
 
 
         type_body.append(indent + '</xsd:all>')
@@ -1241,6 +1235,25 @@ class ClassGenerator(object):
             else:
                 return type_stmt
 
+    def get_stmt_type_name(self, stmt, property_name):
+        type_stmt = search_one(stmt, 'type')
+        if type_stmt.arg == "yang:uuid":
+            type_name = "uuid"
+        elif type_stmt.arg == "enumeration":
+            # generate enumeration type
+            self.generate_enumtype(property_name, type_stmt)
+            type_name = normalize(property_name)+'Type'
+        else:
+            type_arg = self.get_build_in_type(stmt).arg
+            if type_arg in yang_to_xsd_types:
+                type_name = yang_to_xsd_types[type_arg]
+            elif type_arg in ("union", "type"):
+                type_name = type_stmt.arg
+            else:
+                type_name = normalize(type_stmt.arg)+"Type"
+
+        return type_name
+
     def check_stmt_entity(self, stmt):
         uses_stmt = search_one(stmt, 'uses')
         if uses_stmt:
@@ -1265,21 +1278,30 @@ class ClassGenerator(object):
         stmt_arg = stmt.arg
 
         if self.check_stmt_entity(stmt):
-            element = '<xsd:element name="'+stmt.arg+'" type="ifmap:IdentityType" />'
-            exact.append(file_indent + element)
             desc = search_one(stmt, "description")
             if desc:
-                exact.append(file_indent+ "<!--#IFMAP-SEMANTICS-IDL Identity('"+stmt.arg+"', \""+desc.arg+"\") -->")
+                comment = "comment=\""+escape(desc.arg)+"\""
+            else:
+                comment = ""
+            element = '<xsd:element name="'+stmt.arg+'" type="ifmap:IdentityType" '+comment+'/>'
+            exact.append(file_indent + element)
+
 
             for sub_stmt in search(stmt, list(yangelement_stmts | {'anyxml'})):
                 if sub_stmt.i_orig_module.arg != stmt.i_orig_module.arg and sub_stmt.i_orig_module.arg == "csp-common":
                     continue
 
                 sub_stmt_arg = sub_stmt.arg
+                desc = search_one(sub_stmt, "description")
+                if desc:
+                    comment = "comment=\""+escape(desc.arg)+"\""
+                else:
+                    comment = ""
 
                 edge = search_one(sub_stmt, ('csp-common', 'has-edge'))
                 ref_edge = search_one(sub_stmt, ('csp-common', 'ref-edge'))
-                desc = search_one(sub_stmt, "description")
+                #desc = search_one(sub_stmt, "description")
+                property_name = stmt.arg+"-"+sub_stmt_arg
 
                 # generate link of entity
                 if edge or ref_edge:
@@ -1288,12 +1310,10 @@ class ClassGenerator(object):
                     elif ref_edge:
                         link_type = "['ref']"
 
-                    link_name = stmt.arg+'-'+sub_stmt.arg
-
                     if sub_stmt.keyword == "list":
                         #If sub_stmt only have one child and child is uuid, don't generate type for sub_stmt
                         if len(sub_stmt.i_children) == 1 and sub_stmt.i_children[0].arg == "uuid" and sub_stmt.i_children[0].i_is_key:
-                            element = '<xsd:element name="'+link_name+'" />'
+                            element = '<xsd:element name="'+property_name+'" '+comment+'/>'
                             exact.append(file_indent + element)
                         else:
                             generate_type = self.check_reflink(sub_stmt)
@@ -1301,13 +1321,13 @@ class ClassGenerator(object):
                                 ignore_list = self.get_ignorelist(sub_stmt)
                                 parent_arg = normalize(stmt_arg + "-"+sub_stmt_arg)
                                 self.generate_type(parent_arg, sub_stmt, ignore_list)
-                                element = '<xsd:element name="'+link_name+'" type="'+parent_arg+'Type" />'
+                                element = '<xsd:element name="'+property_name+'" type="'+parent_arg+'Type" '+comment+'/>'
                             else:
-                                element = '<xsd:element name="'+link_name+'" />'
+                                element = '<xsd:element name="'+property_name+'" '+comment+'/>'
                             exact.append(file_indent + element)
 
                     elif sub_stmt.keyword in ("leaf"):
-                        element = '<xsd:element name="'+link_name+'" />'
+                        element = '<xsd:element name="'+property_name+'" '+comment+'/>'
                         exact.append(file_indent + element)
 
                     if "_refs" in sub_stmt_arg:
@@ -1315,10 +1335,7 @@ class ClassGenerator(object):
                     else:
                         sub_stmt_name = sub_stmt_arg
 
-                    if desc:
-                        exact.append(file_indent+ "<!--#IFMAP-SEMANTICS-IDL Link('"+link_name+"',"+"'"+stmt.arg+"', '"+sub_stmt_name+"', "+link_type+", \""+desc.arg+"\") -->")
-                    else:
-                        exact.append(file_indent+ "<!--#IFMAP-SEMANTICS-IDL Link('"+link_name+"',"+"'"+stmt.arg+"', '"+sub_stmt_name+"', "+link_type+") -->")
+                    exact.append(file_indent+ "<!--#IFMAP-SEMANTICS-IDL Link('"+property_name+"',"+"'"+stmt.arg+"', '"+sub_stmt_name+"', "+link_type+") -->")
 
                     continue
                 # generate property of entity
@@ -1326,67 +1343,51 @@ class ClassGenerator(object):
                     # generate complexType for container
                     parent_arg = normalize(stmt_arg + "-"+sub_stmt_arg)
                     self.generate_type(parent_arg, sub_stmt)
-                    property_name = stmt_arg+"-"+sub_stmt_arg
+
                     if not edge and not ref_edge:
-                        exact.append(file_indent+'<xsd:element name="'+property_name+'" type="'+parent_arg+'Type" />')
+                        exact.append(file_indent+'<xsd:element name="'+property_name+'" type="'+parent_arg+'Type" '+comment+'/>')
                 elif sub_stmt.keyword == "list":
                     # generate complexType for list
                     parent_arg = normalize(stmt_arg + "-"+sub_stmt_arg)
                     self.generate_type(parent_arg, sub_stmt)
-                    property_name = stmt_arg+"-"+sub_stmt_arg
+
                     if not edge and not ref_edge:
-                        exact.append(file_indent+'<xsd:element name="'+property_name+'" type="'+parent_arg+'Type" maxOccurs="unbounded"/>')
-                elif sub_stmt.keyword  == "leaf" and sub_stmt_arg != 'name':
-                    type = search_one(sub_stmt, 'type')
-                    property_name = stmt.arg+"-"+sub_stmt_arg
-                    type_arg = self.get_build_in_type(sub_stmt).arg
-                    if type_arg in yang_to_xsd_types:
-                        type_name = yang_to_xsd_types[type_arg]
-                    elif type.arg == "enumeration":
-                        # generate enumeration type
-                        self.generate_enumtype(property_name, type)
-                        type_name = normalize(property_name)+'Type'
-                    elif type_arg in ("union", "type"):
-                        type_name = type.arg
-                    else:
-                        type_name = normalize(type.arg)+"Type"
-                    exact.append(file_indent+'<xsd:element name="'+property_name+'" type="'+type_name+'" />')
+                        exact.append(file_indent+'<xsd:element name="'+property_name+'" type="'+parent_arg+'Type" maxOccurs="unbounded" '+comment+'/>')
+                elif sub_stmt.keyword == "leaf" and sub_stmt_arg != 'name':
+                    type_name = self.get_stmt_type_name(sub_stmt, property_name)
+                    exact.append(file_indent+'<xsd:element name="'+property_name+'" type="'+type_name+'" '+comment+'/>')
                 elif sub_stmt.keyword == "leaf-list":
-                    type = search_one(sub_stmt, 'type')
-                    property_name = stmt.arg+"-"+sub_stmt_arg
-                    type_arg = self.get_build_in_type(sub_stmt).arg
-                    if type_arg in yang_to_xsd_types:
-                        type_name = yang_to_xsd_types[type_arg]
-                    elif type.arg == "enumeration":
-                        # generate enumeration type
-                        self.generate_enumtype(property_name, type)
-                        type_name = "xsd:string"
-                    elif type_arg in ("union", "type"):
-                        type_name = type.arg
-                    else:
-                        type_name = normalize(type.arg)+"Type"
-                    exact.append(file_indent+'<xsd:element name="'+property_name+'" type="'+type_name+'" maxOccurs="unbounded" />')
+                    type_name = self.get_stmt_type_name(sub_stmt, property_name)
+                    exact.append(file_indent+'<xsd:element name="'+property_name+'" type="'+type_name+'" maxOccurs="unbounded" '+comment+'/>')
                 elif sub_stmt.keyword == "anyxml":
-                    property_name = stmt.arg+"-"+sub_stmt_arg
-                    exact.append(file_indent+'<xsd:element name="'+property_name+'" type="xsd:string" />')
+                    exact.append(file_indent+'<xsd:element name="'+property_name+'" type="xsd:string" '+comment+'/>')
 
                 if sub_stmt_arg != 'name':
-                    if desc:
-                        exact.append(file_indent+"<!--#IFMAP-SEMANTICS-IDL Property('"+property_name+"', '"+stmt.arg+"',\""+desc.arg+"\") -->")
-                    else:
-                        exact.append(file_indent+"<!--#IFMAP-SEMANTICS-IDL Property('"+property_name+"', '"+stmt.arg+"') -->")
+                    exact.append(file_indent+"<!--#IFMAP-SEMANTICS-IDL Property('"+property_name+"', '"+stmt.arg+"') -->")
 
         if stmt.keyword == "rpc":
             rpc_name = stmt.arg
-            element = '<xsd:element name="'+rpc_name+'" type="yang:RPC" />'
+
+            desc = search_one(stmt, "description")
+            if desc:
+                comment = "comment=\""+escape(desc.arg)+"\""
+            else:
+                comment = ""
+
+            element = '<xsd:element name="'+rpc_name+'" type="yang:RPC" '+comment+'/>'
             exact.append(file_indent + element)
             for sub in stmt.i_children:
+                desc = search_one(sub, "description")
+                if desc:
+                    comment = "comment=\""+escape(desc.arg)+"\""
+                else:
+                    comment = ""
                 if sub.keyword == "input":
                     input_name = normalize(rpc_name)+"_Input"
                     self.generate_type(input_name, sub)
                     input_type = rpc_name + "-input"
                     property_name = input_type + "-input"
-                    exact.append(file_indent+'<xsd:element name="'+input_type+'" type="yang:RpcInputType" />')
+                    exact.append(file_indent+'<xsd:element name="'+input_type+'" type="yang:RpcInputType" '+comment+'/>')
                     exact.append(file_indent+'<xsd:element name="'+property_name+'" type="'+input_name+'Type" />')
                     exact.append(file_indent+"<!--#IFMAP-SEMANTICS-IDL Property('"+property_name+"', '"+input_type+"') -->")
                 elif sub.keyword == "output":
@@ -1394,7 +1395,7 @@ class ClassGenerator(object):
                     self.generate_type(output_name, sub)
                     output_type = rpc_name + "-output"
                     property_name = output_type + "-output"
-                    exact.append(file_indent+'<xsd:element name="'+output_type+'" type="yang:RpcOutputType" />')
+                    exact.append(file_indent+'<xsd:element name="'+output_type+'" type="yang:RpcOutputType" '+comment+'/>')
                     exact.append(file_indent+'<xsd:element name="'+property_name+'" type="'+output_name+'Type" />')
                     exact.append(file_indent+"<!--#IFMAP-SEMANTICS-IDL Property('"+property_name+"', '"+output_type+"') -->")
         if stmt.keyword == "notification":
