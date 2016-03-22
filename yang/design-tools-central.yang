@@ -3,11 +3,49 @@ module design-tools-central {
     namespace "http://www.juniper.net/ns/validation";
     prefix validation;
 
+    typedef gender {
+        type enumeration {
+            enum M;
+            enum F;
+        }
+    }
+    typedef ranged-int32 {
+        type int32 {
+        range "1..4 | 10..20";
+        }
+    }
+    typedef string-restrictions {
+        type string {
+            length "2..5 | 8 | 10..max";
+            pattern "[0-9a-fA-F]*";
+        }
+    }
     list user {
          description "This is a list of users in the system.";
+         ordered-by user;
          key name;
          leaf name {
-            type string;
+            type string-restrictions;
          }
-    }
+         leaf count {
+            type ranged-int32;
+         }
+         leaf gender {
+            type gender;
+         }
+         leaf-list awards {
+             type string;
+             min-elements 2;
+             max-elements 3;
+         }
+         list address{
+            key name;
+            leaf name{
+                type string;
+            }
+            leaf detail{
+                type string-restrictions;
+            }
+         }
+     }
 }
